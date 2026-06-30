@@ -1,0 +1,45 @@
+name: Bug Report
+description: 报告解析错误、比对错误或输出错误
+title: "[Bug]: "
+labels: ["bug"]
+body:
+  - type: textarea
+    id: description
+    attributes:
+      label: 问题描述
+      placeholder: 发生了什么？期望什么结果？
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: 复现步骤
+      placeholder: |
+        1. 输入文件格式（xlsx / docx）
+        2. 文件大致结构（如"22项混排清单"、"docx纯文本无表格"）
+        3. 期望输出 vs 实际输出
+    validations:
+      required: true
+  - type: dropdown
+    id: stage
+    attributes:
+      label: 出错的阶段
+      options:
+        - Step 1 — 解析硬件需求（parse_hardware.py）
+        - Step 2 — 生成询价指引
+        - Step 3 — 报价比对（compare_quotation.py）
+        - Step 4 — 多厂商对比 / 合同比对
+        - 输出格式（xlsx Sheet 结构/内容）
+        - 其他
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: 期望行为
+      placeholder: 你期望的正确结果是什么？
+  - type: textarea
+    id: context
+    attributes:
+      label: 补充信息
+      placeholder: 设备品类、厂商名称、脱敏后的参数样例等

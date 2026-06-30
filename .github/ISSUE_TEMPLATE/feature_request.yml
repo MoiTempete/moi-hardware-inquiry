@@ -1,0 +1,31 @@
+name: Feature Request
+description: 建议新功能或改进
+title: "[Feature]: "
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: 使用场景
+      placeholder: 什么场景下需要这个功能？目前的工作流有什么不足？
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: 建议方案
+      placeholder: 期望的工作方式？涉及哪些文件？
+  - type: dropdown
+    id: scope
+    attributes:
+      label: 范围
+      options:
+        - 解析脚本（parse_hardware.py）
+        - 比对脚本（compare_quotation.py）
+        - 工作流（SKILL.md）
+        - 参考数据（equipment-db.md）
+        - 输出格式（xlsx Sheet 结构）
+        - 文档（README / CONTRIBUTING）
+        - 其他
+    validations:
+      required: true
