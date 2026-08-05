@@ -7,7 +7,7 @@
 
 一个适配 Claude Code 等 Agent 环境的硬件询价技能，用于从招标技术文件（docx/xlsx）中**自动提取硬件设备需求、生成询价指引、比对厂商报价、审核采购合同**。
 
-核心流程：解析技术文件 → 自动分类（硬件/软件/服务）→ 生成询价指引（厂商/型号/参考价格）→ 导入厂商报价逐项比对 → 生成参数偏离表 → 多厂商横向对比 / 合同审核。
+核心流程：解析技术文件 → 自动分类（硬件/软件/服务）→ 生成询价指引（厂商/型号/参考价格）→ 导入厂商报价逐项比对 → 生成参数偏离表 → 多厂商横向对比 / 合同审核 →（中标后）MRP 采购排程。
 
 > 由 [MoiTempete](https://github.com/MoiTempete) 基于真实煤矿网络安全、云计算中心等多个项目的硬件采购实践沉淀而成。
 
@@ -46,6 +46,7 @@ git clone https://github.com/MoiTempete/moi-hardware-inquiry ~/.claude/skills/mo
 - 📊 **三种比对模式**：纯询价模式 → 报价比对模式 → 合同比对模式，覆盖从招标分析到签约审核的全链路
 - 🆚 **多厂商横向对比**：同框展示各厂商的型号/参数/价格/判定，自动推荐最优选择
 - 📄 **合同审核**：检查采购合同 vs 招标要求的缺失项、范围外项、质保条款、配件来源
+- 📅 **MRP 采购排程**（联动 [`moi-mrp-planning`](../moi-mrp-planning/)）：中标后将定稿 BOM × 项目里程碑 × 交货周期 → 每项设备最晚下单日期、采购批次、依赖检查、风险标记
 - 📚 **内置参考库**：30+ 条实战验证的设备价格和技术参数，既可做价格锚点也可做参数合理性判断基准
 
 ## 适合 / 不适合
@@ -64,6 +65,7 @@ git clone https://github.com/MoiTempete/moi-hardware-inquiry ~/.claude/skills/mo
 | 拿到拟签合同，要审核 | 合同比对模式：Step 4 合同 vs 招标逐项比对 + 缺失项清单 |
 | 招标要求中有"配置自设计" | Step 1.5 方案确认 → 三档方案梯度（经济/推荐/高性能）|
 | 设备清单混有 Oracle/虚拟化等软件授权 | Step 1 自动分类 → 硬件与软件分开列表、分开询价 |
+| 中标后要排采购计划、什么时候下单 | MRP 模式：[`moi-mrp-planning`](../moi-mrp-planning/)（需提供项目里程碑；本 skill 的设备清单 JSON 与询价单交货周期可直接复用）|
 
 ## 为什么是 Agent Skill
 
@@ -107,6 +109,8 @@ git clone https://github.com/MoiTempete/moi-hardware-inquiry ~/.claude/skills/mo
 - "设备偏离表"
 - "hardware inquiry"
 
+> 采购排程类请求（"排采购计划""什么时候下单""MRP"）由 [`moi-mrp-planning`](../moi-mrp-planning/) 处理。
+
 ## 使用流程
 
 Skill 本身是结构化工作流，Agent 会逐步引导：
@@ -116,6 +120,7 @@ Skill 本身是结构化工作流，Agent 会逐步引导：
 3. **生成询价指引** — 内置参考库 + LLM 估算，输出内部建议文档 + 外部脱敏询价单
 4. **报价比对** — 导入厂商报价，逐项比对参数，生成偏离表
 5. **多厂商对比 / 合同审核** — 横向选型推荐 或 合同缺失项 + 风险分析
+6. **MRP 采购排程**（可选，中标后）— 将定稿清单/询价单交货周期移交 [`moi-mrp-planning`](../moi-mrp-planning/)，结合项目里程碑排采购批次与下单日期
 
 详细说明见 [`SKILL.md`](./SKILL.md)。
 
@@ -147,6 +152,7 @@ Skill 本身是结构化工作流，Agent 会逐步引导：
 6. **无法判断 ≠ 满足**：报价单缺失的参数不能默认为合规
 7. **外部询价单必须脱敏**：从 docx 招标文件提取的参数，发给供应商前删除项目名称/甲方/招标编号
 8. **内置库双向查询**：equipment-db 既是价格参考也是技术参数基准，用于判断报价配置合理性
+9. **询价单回收交货周期**：询价单"交货周期"列是下游 MRP 排程的关键输入，回收报价时提醒厂商填写
 
 ## 目录结构
 
@@ -184,6 +190,9 @@ moi-hardware-inquiry/
 
 **和 moi-bid-defense 是什么关系？**
 `moi-bid-defense` 将技术响应转化为讲标幻灯片。`moi-hardware-inquiry` 专注硬件采购环节。三个 skill 覆盖投标全链路：写标书 → 核硬件 → 讲标。
+
+**中标后怎么排采购计划？**
+使用 [`moi-mrp-planning`](../moi-mrp-planning/)。提供定稿 BOM（或本 skill 的设备清单 JSON）+ 项目里程碑（各节点日期）+ 交货周期（本 skill 询价单"交货周期"列回收），即可得到每项设备最晚下单日期、采购批次与风险清单。
 
 **内置参考库的价格准吗？**
 参考库标注了来源（实战-素材X）和日期，反映特定项目的成交价或报价。不同项目的批量、定制需求、付款条件会导致价格差异。使用时作为锚点参考，实际询价以厂商书面报价为准。
@@ -223,7 +232,11 @@ npx skills add https://github.com/MoiTempete/moi-bid-response --skill moi-bid-re
 git clone https://github.com/MoiTempete/moi-bid-defense ~/.claude/skills/moi-bid-defense
 ```
 
-**完整链路**：招标文件 (.docx) → `moi-bid-response` → 技术响应 (.docx/.md) → `moi-hardware-inquiry`（硬件询价+核价）+ `moi-bid-defense`（讲标PPT）
+### 中标后 — MRP 采购排程
+
+**[`moi-mrp-planning`](../moi-mrp-planning/)** — 中标后按 BOM × 项目里程碑 × 交货周期排采购批次与下单日期。本 skill 的 `parse_hardware.py` 输出 JSON 和询价单"交货周期"列回收数据可直接作为其输入。
+
+**完整链路**：招标文件 (.docx) → `moi-bid-response` → 技术响应 (.docx/.md) → `moi-hardware-inquiry`（硬件询价+核价）+ `moi-bid-defense`（讲标PPT）→ 中标后 `moi-mrp-planning`（MRP 采购排程）
 
 ## 更新日志
 
